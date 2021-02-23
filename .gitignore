@@ -1,3 +1,15 @@
+# User-added
+# ----------------------------------------------------------------------------
+
+# Binaries
+broken_hashserve/broken-hashserve_*
+
+# PyCharm
+.idea
+
+# GitHub Template
+# ----------------------------------------------------------------------------
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

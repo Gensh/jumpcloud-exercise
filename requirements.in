@@ -1,0 +1,9 @@
+# Test framework
+pytest
+pytest-xdist
+
+# Cleanup
+black
+flake8
+isort
+pre-commit
