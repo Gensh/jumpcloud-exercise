@@ -7,6 +7,9 @@ broken_hashserve/broken-hashserve_*
 # PyCharm
 .idea
 
+# Utils
+.ztr-directory
+
 # GitHub Template
 # ----------------------------------------------------------------------------
 

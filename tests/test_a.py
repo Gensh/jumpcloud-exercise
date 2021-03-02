@@ -1,6 +1,9 @@
-class TestA:
+"""Test module"""
+
+
+class ATest:
     """
-    TestA
+    ATest
     """
 
     def test_a(self):
