@@ -34,8 +34,7 @@ You can interact/test the application using curl. The following are examples tha
 - Post to the /hash endpoint
 
     ```bash
-    $ curl -X POST -H "application/json" -d '{"password":"angrymonkey"}'
-    http://127.0.0.1:8088/hash
+    $ curl -X POST -H "application/json" -d '{"password":"angrymonkey"}' http://127.0.0.1:8088/hash
     > 42
     ```
 
