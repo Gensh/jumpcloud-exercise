@@ -14,6 +14,13 @@ base_path = pathlib.Path().absolute()
 hashserve_exe = base_path / "broken_hashserve" / f"broken-hashserve_{hashserve_suffix}"
 
 
+def run_curl(request, endpoint):
+    """Run a curl request which plays by the rules."""
+
+    command = f"curl {request} http://127.0.0.1:8088/{endpoint}"
+    return subprocess.run(command, text=True, check=True)
+
+
 @pytest.fixture(scope="class", autouse=True)
 def start_server():
     """
@@ -26,22 +33,19 @@ def start_server():
     subprocess.Popen(hashserve_exe)
 
 
-class HashServeOperationTest:
+class HashServeHashCrudTest:
     """
-    Test class for regular hashserve operation.
-    Test pattern was changed from standard TestFoo to FooTest because that's more
-     legible at a glance.
+    Test class for regular hashserve Create/Read/Update/Delete.
     """
 
     @staticmethod
     def test_get_base64_password():
         """Test getting the """
 
-        curl = """curl -H "application/json" http://127.0.0.1:8088/hash/1"""
-        call = subprocess.run(curl, text=True, check=True)
+        result = run_curl(request='-H "application/json"', endpoint="hash/1")
         ciphertext = "zHkbvZDdwYYiDnwtDdv/FIWvcy1sKCb7qi7Nu8Q8Cd/MqjQeyCI0pWKDGp74A1g=="
-        assert call.stdout == ciphertext, (
+        assert result.stdout == ciphertext, (
             "Failed to get the correct base64 password"
-            f"\nActual:   {call.stdout}"
+            f"\nActual:   {result.stdout}"
             f"\nExpected: {ciphertext}"
         )
