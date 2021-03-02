@@ -12,9 +12,9 @@ base_path = pathlib.Path().absolute()
 hashserve_exe = base_path / "broken_hashserve" / f"broken-hashserve_{hashserve_suffix}"
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="class", autouse=True)
 def start_server():
-    return subprocess.run(hashserve_exe)
+    return subprocess.Popen(hashserve_exe)
 
 
 class ATest:
@@ -23,7 +23,14 @@ class ATest:
     """
 
     @staticmethod
-    def test_a():
-        """test_a"""
+    def test_get_base64_password():
+        """Do the thing"""
 
-        raise RuntimeError
+        curl = """curl -H "application/json" http://127.0.0.1:8088/hash/1"""
+        call = subprocess.run(curl, text=True, check=True)
+        ciphertext = "zHkbvZDdwYYiDnwtDdv/FIWvcy1sKCb7qi7Nu8Q8Cd/MqjQeyCI0pWKDGp74A1g=="
+        assert call.stdout == ciphertext, (
+            "Failed to get the correct base64 password"
+            f"\nActual:   {call.stdout}"
+            f"\nExpected: {ciphertext}"
+        )
