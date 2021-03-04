@@ -21,7 +21,6 @@ def start_server(request):
     Will autorun for each test for the sake of keeping results independent.
      Could be moved back to class-based autorun if index-based collisions could
      be avoided.
-    No need to test startup since that's implicit for every other test.
     """
 
     # Skip if test marked no_server.
