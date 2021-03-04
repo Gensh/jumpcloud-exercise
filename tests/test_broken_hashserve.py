@@ -1,17 +1,4 @@
 """
-Module containing all tests for the broken hashserve executable.
-"""
-
-import pytest
-
-from .cmd_util import run_curl
-
-good_passwords = [
-    ("abc123", "YWJjMTIz"),
-]
-
-
-"""
 - When launched, the application should wait for http connections.
 - It should answer on the `PORT` specified in the `PORT` environment variable.
 - It should support three endpoints:
@@ -32,10 +19,50 @@ good_passwords = [
 - No additional password requests should be allowed when shutdown is pending.
 """
 
+import pytest
 
-class HashServeGetTest:
+from .cmd_util import get_first_result, get_result, post_password
+
+# Keep encoded hashes to reduce runtime.
+good_passwords = [
+    (
+        "angrymonkey",
+        "MzRkZDBmMDBhYjYyNzlhY2EyNGQ4ZjNmNDFkZTc3MDFlMzMzMWU0NmVmNjQzNzcwNjE4OD"
+        "gzOWYwYjQzNzZmZmM1MjE2YmRjY2I1YjBhMDliZWVhOGJiMzZlZjEwZjAyNzdmMzJhOGQw"
+        "N2IyMDg4ZDI5NThhMGM2YTdiZTAwZDY=",
+    ),
+    (
+        "abc123",
+        "YzcwYjVkZDllYmZiNmY1MWQwOWQ0MTMyYjcxNzBjOWQyMDc1MGE3ODUyZjAwNjgwZjY1Nj"
+        "U4ZjAzMTBlODEwMDU2ZTY3NjNjMzRjOWEwMGIwZTk0MDA3NmY1NDQ5NWMxNjlmYzIzMDJj"
+        "Y2ViMzEyMDM5MjcxYzQzNDY5NTA3ZGM=",
+    ),
+    (
+        "ａｂｃ１２３",
+        "NzQ2YjUxM2Q0MTllZDFhOGRmMGJmMGEwMTY5NDk5OTkwNTFmZjhiMWQ4OTY2ZDNlNTdjYm"
+        "Q2NWE5MTFjOGY1ZGRhMWQ0MDJiNzU0ZDkzZGI4OTJlMjcwMTJiOGFlNTYwNmI0YTVlZmE5"
+        "OGE0MzliMzU0ZmE4MTRmNjZhYjMwZmQ=",
+    ),
+    (
+        "ᴀʙᴄ123",
+        "YWI2NjZmZTE5M2U5NmU4ODAxYjU4MjA5NjQwY2Y2NWExOTY3MTExYmMyZGUxMWY0YTUyYj"
+        "c3NjEzMjMzMDc2MWViNTBmZjRlYmE4MjIyMGEzYWVmNDA1MjI5NDkwM2I3MmE2ZGM2Yjg4"
+        "YTBiYjMwYTY0MjQwNDE3YzZhMWRjYTE=",
+    ),
+    (
+        "怒っている猿",
+        "ZGQyOGVlZmE1MTc5OTgyMTQ5NTYyNmNmZWZlZjY0YTk2MzI2YzIyMGNiYWZjYjEzZWM1MG"
+        "FmZGY5NGFkNjcwMTY5NGNhNDE1YzhhZGQ1NzQ0NzEzZWQ0MmE1YzczODAzZTA4M2VmYzAw"
+        "M2RkODkwMDA2ODVlMjNiNzUzNDllODA=",
+    ),
+]
+
+
+class GetHashTest:
     """
-    Tests for GET requests.
+    A `GET` to `/hash` should accept a job identifier.
+    It should return the base64 encoded password hash for the corresponding
+    `POST` request.
     """
 
     @staticmethod
@@ -49,15 +76,8 @@ class HashServeGetTest:
         :param encoded: The base64 encoding of that password.
         """
 
-        # Put the password in.
-        json_object = f"""{{"password":"{password}"}}"""
-        run_curl(
-            request=f"""-X POST -H "application/json" -d '{json_object}'""",
-            endpoint="hash",
-        )
-
-        # Get the encoded version out.
-        result = run_curl(request='-H "application/json"', endpoint="hash/1")
+        post_password(password)
+        result = get_first_result()
         assert result.returncode == 200, (
             "Received a return code other than 200" f"\nActual:   {result.returncode}"
         )
@@ -75,7 +95,7 @@ class HashServeGetTest:
         So I can readily recognize the issue
         """
 
-        result = run_curl(request='-H "application/json"', endpoint="hash/1")
+        result = get_first_result()
         assert result.returncode != 200, "Received code 200 when in error state"
         assert (
             result.returncode != 0
@@ -83,4 +103,40 @@ class HashServeGetTest:
         assert result.stdout is None, (
             "Found a password when expecting an empty database"
             f"\nActual:   {result.stdout}"
+        )
+
+    @staticmethod
+    def test_fail_if_bad_job_id():
+        """
+        When I send a GET request with a bad job ID
+        I want to receive an error code
+        So I can readily recognize the issue
+        """
+
+        post_password("foo")
+        result = get_result(2)
+        assert result.returncode != 200, "Received code 200 when in error state"
+        assert (
+            result.returncode != 0
+        ), "Did not receive a return code when in error state"
+        assert result.stdout is None, (
+            "Found a password given a bad job ID" f"\nActual:   {result.stdout}"
+        )
+
+    @staticmethod
+    def test_fail_if_string_job_id():
+        """
+        When I send a GET request with a string job ID instead of an integer
+        I want to receive an error code
+        So I can readily recognize the issue
+        """
+
+        post_password("foo")
+        result = get_result("foo")
+        assert result.returncode != 200, "Received code 200 when in error state"
+        assert (
+            result.returncode != 0
+        ), "Did not receive a return code when in error state"
+        assert result.stdout is None, (
+            "Found a password given a string key" f"\nActual:   {result.stdout}"
         )
