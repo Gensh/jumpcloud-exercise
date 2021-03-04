@@ -2,41 +2,13 @@
 Module containing all tests for the broken hashserve executable.
 """
 
-import pathlib
-import platform
-import subprocess
-
 import pytest
 
-my_os = platform.system()
-hashserve_suffix = "win.exe" if my_os == "Windows" else my_os.lower()
-base_path = pathlib.Path().absolute()
-hashserve_exe = base_path / "broken_hashserve" / f"broken-hashserve_{hashserve_suffix}"
-
+from .cmd_util import run_curl
 
 good_passwords = [
     ("abc123", "YWJjMTIz"),
 ]
-
-
-def run_curl(request, endpoint):
-    """Run a curl request which plays by the rules."""
-
-    command = f"curl {request} http://127.0.0.1:8088/{endpoint}"
-    return subprocess.run(command, text=True)
-
-
-@pytest.fixture(scope="function", autouse=True)
-def start_server():
-    """
-    Start the server. Opens the process and does nothing.
-    Will autorun for each test for the sake of keeping results independent.
-     Could be moved back to class-based if index-based collisions could be avoided.
-    No need to test startup since that's implicit for every other test.
-    :return:
-    """
-
-    subprocess.Popen(hashserve_exe)
 
 
 class HashServeGetTest:
