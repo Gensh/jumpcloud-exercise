@@ -1,3 +1,7 @@
+"""
+Functions for interacting with terminal subprocesses.
+"""
+
 import subprocess
 
 
