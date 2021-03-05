@@ -19,12 +19,13 @@
 - No additional password requests should be allowed when shutdown is pending.
 """
 
+import json
 import subprocess
 
 import pytest
 
 from tests.util.data import good_passwords
-from tests.util.terminal import get_first_result, get_result, post_password
+from tests.util.terminal import get_first_result, get_result, get_stats, post_password
 
 """
 Requirements implicitly tested:
@@ -161,6 +162,54 @@ class StatsTest:
     It should return a JSON data structure for the total hash requests since
      the server started and the average time of a hash request in milliseconds.
     """
+
+    @staticmethod
+    def test_get_stats_updates():
+        """
+        When I send a GET request
+        I want to see the stats have updated since my last request
+        So I can trust the integrity of my data
+        """
+
+        def update_stats():
+            raw_stats = get_stats()
+            assert raw_stats.stdout, "Failed to get stats"
+
+            decoded_stats = json.loads(raw_stats.stdout)
+
+            requests = decoded_stats.get("TotalRequests")
+            time = decoded_stats.get("AverageTime")
+
+            assert requests, "Stats don't include total requests"
+            assert time, "Stats don't include average time"
+
+            return requests, time
+
+        last_requests, last_time = update_stats()
+
+        time_updates = False
+
+        my_passwords = ["foo", "bar"]
+        for index in range(1, len(my_passwords)):
+            post_password(my_passwords[index])
+            current_requests, current_time = update_stats()
+            assert (
+                current_requests > last_requests
+            ), "Didn't update total requests after POST"
+            time_updates = True if time_updates else current_time != last_time
+            last_requests = current_requests
+            last_time = current_time
+
+            get_result(index)
+            current_requests, current_time = update_stats()
+            assert (
+                current_requests > last_requests
+            ), "Didn't update total requests after GET"
+            time_updates = True if time_updates else current_time != last_time
+            last_requests = current_requests
+            last_time = current_time
+
+        assert time_updates, "Never updated average time"
 
 
 class MultipleAccessTest:
