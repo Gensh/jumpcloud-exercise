@@ -19,6 +19,8 @@
 - No additional password requests should be allowed when shutdown is pending.
 """
 
+import subprocess
+
 import pytest
 
 from tests.util.data import good_passwords
@@ -31,21 +33,48 @@ Requirements implicitly tested:
 """
 
 
-class PostHashTest:
+class HashTest:
     """
     A `POST` to `/hash` should accept a password.
     It should return a job identifier immediately.
     It should then wait 5 seconds and compute the password hash.
     The hashing algorithm should be SHA512.
-    """
 
-
-class GetHashTest:
-    """
     A `GET` to `/hash` should accept a job identifier.
     It should return the base64 encoded password hash for the corresponding
      `POST` request.
     """
+
+    @staticmethod
+    @pytest.mark.parametrize("password, encoded", good_passwords)
+    def test_post_return_immediately(password, encoded):
+        """
+        When I send a POST request
+        I want to get the job ID immediately
+        So I can go back and check the result when it's ready
+        :param password: A known good password.
+        :param encoded: The base64 encoded password hash.
+        """
+
+        def post_password_nowait():
+            """
+            POST the password to the hash endpoint but don't wait for it to return.
+            """
+
+            json_object = f"""{{"password":"{password}"}}"""
+            request = f"""-X POST -H "application/json" -d '{json_object}'"""
+            command = f"curl {request} http://127.0.0.1:8088/hash"
+            return subprocess.Popen(
+                command, text=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+            )
+
+        post_return = post_password_nowait()
+        assert post_return.stdout, "Did not return immediately"
+        assert str.isdigit(f"{post_return.stdout}"), (
+            "Did not return a valid job ID"
+            f"\nActual:   {post_return.stdout}"
+            f"\nExpected: 1"
+        )
 
     @staticmethod
     @pytest.mark.parametrize("password, encoded", good_passwords)
@@ -55,7 +84,7 @@ class GetHashTest:
         I want to get the encoded password
         So I can do my security thing
         :param password: A known good password.
-        :param encoded: The base64 encoding of that password.
+        :param encoded: The base64 encoded password hash.
         """
 
         post_password(password)
@@ -126,7 +155,7 @@ class GetHashTest:
         )
 
 
-class GetStatsTest:
+class StatsTest:
     """
     A `GET` to `/stats` should accept no data.
     It should return a JSON data structure for the total hash requests since

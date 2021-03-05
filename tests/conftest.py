@@ -10,7 +10,7 @@ def _make_hashserve_exe_path():
 
     my_os = platform.system()
     hashserve_suffix = "win.exe" if my_os == "Windows" else my_os.lower()
-    base_path = pathlib.Path().absolute()
+    base_path = pathlib.Path().absolute().parent
     return base_path / "broken_hashserve" / f"broken-hashserve_{hashserve_suffix}"
 
 
@@ -27,6 +27,9 @@ def start_server(request):
     if "no_server" in request.keywords:
         return
 
+    # TODO Maybe: Run in individual environments with randomized ports in order
+    #  to restore parallel test execution. Randomized, because atomic port
+    #  incrementing is not worth the effort vs "good enough" random.
     subprocess.Popen(hashserve_exe)
 
 
