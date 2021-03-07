@@ -27,6 +27,12 @@ import pytest
 from tests.util.data import good_passwords
 from tests.util.terminal import get_first_result, get_result, get_stats, post_password
 
+request_calls = [
+    lambda: post_password("foo"),
+    lambda: get_first_result(),
+    lambda: get_stats(),
+]
+
 """
 Requirements implicitly tested:
 - When launched, the application should wait for http connections.
@@ -217,6 +223,19 @@ class MultipleAccessTest:
     The software should be able to process multiple connections simultaneously.
     """
 
+    @staticmethod
+    @pytest.mark.skip("TODO")
+    @pytest.mark.parametrize("first_request", request_calls)
+    @pytest.mark.parametrize("second_request", request_calls)
+    def test_serve_two_simultaneous_requests(first_request, second_request):
+        """
+        When I send a request at the same time as someone else
+        I want to get my result as normal
+        So my workflow is not interrupted
+        :param first_request: The first request.
+        :param second_request: The second request.
+        """
+
 
 class ShutdownTest:
     """
@@ -225,3 +244,34 @@ class ShutdownTest:
      respond with a `200` and shutdown.
     No additional password requests should be allowed when shutdown is pending.
     """
+
+    @staticmethod
+    @pytest.mark.skip("TODO")
+    def test_shutdown():
+        """
+        When I send a shutdown request
+        I want to get my result as normal
+        So my workflow is not interrupted
+        """
+
+    @staticmethod
+    @pytest.mark.skip("TODO")
+    @pytest.mark.parametrize("first_request", request_calls)
+    def test_reject_when_shutting_down(first_request):
+        """
+        When I send a request while the server is shutting down
+        I want to get be informed I was rejected
+        So I am aware of the status but don't interrupt shutdown
+        :param first_request: The first request.
+        """
+
+    @staticmethod
+    @pytest.mark.skip("TODO")
+    @pytest.mark.parametrize("first_request", request_calls)
+    def test_finish_before_shutting_down(first_request):
+        """
+        When I send a shutdown request
+        I want the server to complete existing requests
+        So I don't interrupt other users
+        :param first_request: The first request.
+        """
